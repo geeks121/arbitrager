@@ -11,4 +11,8 @@ https.use_ssl = true
 response = https.get uri.request_uri
 result = JSON.parse(response.body)
 
-puts result["mid_price"]
+bid = result["bids"][0]["price"]
+asks = result["asks"][0]["price"]
+
+puts(bid)
+puts(asks)

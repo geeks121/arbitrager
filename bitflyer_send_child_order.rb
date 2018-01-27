@@ -1,8 +1,8 @@
 require "net/http"
 require "uri"
+require "json"
 require "openssl"
 require "Base64"
-require "json"
 require "./password"
 
 key = Base64.decode64($encryption_key)
