@@ -5,8 +5,8 @@ require "openssl"
 require "Base64"
 require "./password"
 
-key = Base64.decode64($encryption_key)
-secret = Base64.decode64($encryption_secret)
+key = Base64.decode64($bitflyer_encryption_key)
+secret = Base64.decode64($bitflyer_encryption_secret)
 
 timestamp = Time.now.to_i.to_s
 method = "POST"
