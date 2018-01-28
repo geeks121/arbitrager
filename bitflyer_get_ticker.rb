@@ -14,5 +14,5 @@ result = JSON.parse(response.body)
 bid = result["best_bid"]
 ask = result["best_ask"]
 
-puts(bid)
-puts(ask)
+puts bid
+puts ask
