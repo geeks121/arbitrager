@@ -8,5 +8,4 @@ class Bitflyer < SystemTrade
     response = request_http(uri)
     return response["best_bid"], response["best_ask"]
   end
-
 end
