@@ -1,6 +1,7 @@
 require 'net/http'
 require 'uri'
 require 'json'
+require 'openssl'
 
 class SystemTrade
   def initialize(key, secret)

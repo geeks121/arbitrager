@@ -1,10 +1,13 @@
-hash = Hash.new
-hash.store(:bf_bid, 30)
-hash.store(:bf_ask, 20)
-hash.store(:cc_bid, 50)
-hash.store(:cc_ask, 60)
+hash = Hash.new { |h, k| h[k] = Hash.new(&h.default_proc) }
+hash[:bitflyer][:bid][:price] = 30
+hash[:bitflyer][:bid][:size] = 0.1
+hash[:bitflyer][:ask][:price] = 25
+hash[:bitflyer][:ask][:size] = 0.2
+hash[:coincheck][:bid][:price] = 40
+hash[:coincheck][:bid][:size] = 0.3
+hash[:coincheck][:ask][:price] = 35
+hash[:coincheck][:ask][:size] = 0.4
 
-puts hash
-min, max = hash.minmax { |a, b| a[1] <=> b[1] }
-puts min[1]
-puts max[1]
+puts hash[:bitflyer][:bid][:price]
+puts hash.keys
+puts hash.values

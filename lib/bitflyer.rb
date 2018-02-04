@@ -4,8 +4,9 @@ class Bitflyer < SystemTrade
   @@base_url = "https://api.bitflyer.jp"
 
   def read_ticker
-    uri = URI.parse(@@base_url + "/v1/getticker")
+    uri = URI.parse(@@base_url + "/v1/getboard")
     response = request_http(uri)
-    return response["best_bid"], response["best_ask"]
+    return response["bids"][0]["price"], response["asks"][0]["price"],
+            response["bids"][0]["size"], response["asks"][0]["size"] 
   end
 end
