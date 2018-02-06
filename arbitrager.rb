@@ -42,14 +42,32 @@ boards.each do |broker|
   if(best_bid_price.nil? || best_bid_price < max)
     best_bid_broker = broker[0]
     best_bid_price = max
-    best_bid_size = BigDecimal(broker[1][:bid][:size].to_s).floor(3).to_f
+    best_bid_size = BigDecimal(broker[1][:bid][:size].to_s).floor(2).to_f
   end
   if(best_ask_price.nil? || best_ask_price > min)
     best_ask_broker = broker[0]
     best_ask_price = min
-    best_ask_size = BigDecimal(broker[1][:ask][:size].to_s).floor(3).to_f
+    best_ask_size = BigDecimal(broker[1][:ask][:size].to_s).floor(2).to_f
   end
+end
+
+mid_price = (best_bid_price + best_ask_price) / 2
+spread = best_bid_price - best_ask_price
+available_volume = best_bid_size < best_ask_size ? best_bid_size : best_ask_size
+expected_profit = (best_bid_price - best_ask_price) * available_volume
+profit_percent = expected_profit / (mid_price * available_volume) * 100
+
+if(available_volume > config["maxsize"])
+  target_volume = config["maxsize"]
+elsif(available_volume < config["minsize"])
+  puts "exit"
+else
+  target_volume = available_volume
 end
 
 puts Time.now.to_s + " " + "Best bid: " + best_bid_broker.to_s.ljust(10) + best_bid_price.to_s + " " + best_bid_size.to_s
 puts Time.now.to_s + " " + "Best ask: " + best_ask_broker.to_s.ljust(10) + best_ask_price.to_s + " " + best_ask_size.to_s
+puts Time.now.to_s + " " + "Spread: " + spread.to_s
+puts Time.now.to_s + " " + "Available volume: " + available_volume.to_s
+puts Time.now.to_s + " " + "Target volume: " + target_volume.to_s
+puts Time.now.to_s + " " + "Expected profit: " + expected_profit.to_s
