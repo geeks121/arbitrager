@@ -19,14 +19,14 @@ config["brokers"].each_with_index do |broker, i|
   threads << Thread.new do
     if(broker["broker"] == "bitflyer")
       bf = Bitflyer.new(broker["key"], broker["secret"])
-      bid_price, ask_price, bid_size, ask_size = bf.read_ticker
+      bid_price, ask_price, bid_size, ask_size = bf.get_order_books
       boards[:bitflyer][:bid][:price] = bid_price
       boards[:bitflyer][:ask][:price] = ask_price
       boards[:bitflyer][:bid][:size] = bid_size
       boards[:bitflyer][:ask][:size] = ask_size
     elsif(broker["broker"] == "coincheck")
       cc = Coincheck.new(broker["key"], broker["secret"])
-      bid_price, ask_price, bid_size, ask_size = cc.read_ticker
+      bid_price, ask_price, bid_size, ask_size = cc.get_order_books
       boards[:coincheck][:bid][:price] = bid_price
       boards[:coincheck][:ask][:price] = ask_price
       boards[:coincheck][:bid][:size] = bid_size
@@ -54,7 +54,7 @@ end
 mid_price = (best_bid_price + best_ask_price) / 2
 spread = best_bid_price - best_ask_price
 available_volume = best_bid_size < best_ask_size ? best_bid_size : best_ask_size
-expected_profit = (best_bid_price - best_ask_price) * available_volume
+expected_profit = ((best_bid_price - best_ask_price) * available_volume).floor(2)
 profit_percent = expected_profit / (mid_price * available_volume) * 100
 
 if(available_volume > config["maxsize"])
