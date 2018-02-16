@@ -97,7 +97,7 @@ puts Time.now.to_s + ' ' + '>> Sending order targetting quote ' \
 [best_ask_broker, best_bid_broker].each do |broker|
   case broker
   when 'bitflyer'
-    puts 'bitflyer'
+    tmp = bitflyer.send_order()
   when 'coincheck'
     temp = coincheck.send_order(order_type: 'buy',
                                 rate: best_ask_price,
