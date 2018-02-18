@@ -28,3 +28,4 @@ response = https.request(request)
 temp = JSON.parse(response.body)
 puts temp['buy_price_levels'][0]
 puts temp['buy_price_levels'][0][0]
+
