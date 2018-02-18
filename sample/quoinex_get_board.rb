@@ -25,8 +25,13 @@ request.add_field('X-Quoine-Auth', signature)
 request.add_field('Content-Type', 'application/json')
 
 response = https.request(request)
-temp = JSON.parse(response.body)
-puts temp['buy_price_levels'][0]
-puts temp['buy_price_levels'][0][0]
+result = JSON.parse(response.body)
+
+bid = result['buy_price_levels'][0]
+ask = result['sell_price_levels'][0]
+
+print bid
+puts "\n-----"
+print ask
 
 
