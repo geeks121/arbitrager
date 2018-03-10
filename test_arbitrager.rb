@@ -1,15 +1,17 @@
 require 'yaml'
+require_relative './lib/broker_adapter'
 
 # This class is main component.
 class Arbitrager
   def initialize
-    @config = YAML.load_file('./etc/config.yml')
+    @broker_adapter = BrokerAdapter.new
   end
 
   def start
-    puts 'Hello World!'
+    @broker_adapter.create_threads('board')
   end
 end
 
-arbitrager = Arbitrager.new
+test = Arbitrager
+arbitrager = test.new
 arbitrager.start
