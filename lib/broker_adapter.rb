@@ -1,3 +1,6 @@
+require 'yaml'
+require_relative 'test_bitflyer'
+
 # This class is broker adapter.
 class BrokerAdapter
   def initialize
@@ -10,13 +13,13 @@ class BrokerAdapter
 
   def create_threads(method)
     threads = []
-    @config['brokers'].each do |_broker|
-      threads << Thread.new do
-         case method
-      when 'board' then fetch_board
+    @config['brokers'].each do |broker|
+      next unless broker['enabled']
+      puts broker['broker']
+      case method
+      when 'board' then Object.const_get(broker['broker']).hello
       when 'order' then puts 'order'
       end
     end
   end
 end
-　　

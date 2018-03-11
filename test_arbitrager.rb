@@ -1,4 +1,3 @@
-require 'yaml'
 require_relative './lib/broker_adapter'
 
 # This class is main component.
@@ -12,6 +11,5 @@ class Arbitrager
   end
 end
 
-test = Arbitrager
-arbitrager = test.new
+arbitrager = Arbitrager.new
 arbitrager.start
