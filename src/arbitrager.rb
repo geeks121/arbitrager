@@ -41,7 +41,7 @@ class Arbitrager
     end
 
     def call_maker(broker)
-      BoardMaker.new.get_board(broker)
+      BoardMaker.new.call_broker(broker)
     end
 
     def call_broker

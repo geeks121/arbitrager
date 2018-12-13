@@ -1,5 +1,12 @@
+require_relative "broker"
+
 class BoardMaker
-  def get_board(broker)
-    p "test"
+  def call_broker(broker)
+    Broker.new.get_ticker(broker)
   end
+
+  private
+  
+    def adjust_board
+    end
 end
