@@ -39,6 +39,13 @@ class Coincheck
     return response["bid"].to_i, response["ask"].to_i
   end
 
+  def get_order_book(broker)
+    uri = URI.parse(@base_url + "/api/order_books")
+    headers = get_signature(uri, broker[:key], broker[:secret])
+    response = request_for_get(uri, headers)
+    return response["bids"], response["asks"]
+  end
+
   def get_balance(broker)
     uri = URI.parse(@base_url + "/api/accounts/balance")
     headers = get_signature(uri, broker[:key], broker[:secret])

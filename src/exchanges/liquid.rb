@@ -34,6 +34,14 @@ class Liquid
     return response["market_bid"].to_i, response["market_ask"].to_i
   end
 
+  def get_order_book(broker)
+    uri = URI.parse(@base_url)
+    path = "/products/5/price_levels"
+    signature = get_signature(path, broker[:key], broker[:secret])
+    response = request_for_get(uri, path, signature)
+    return response["buy_price_levels"], response["sell_price_levels"]
+  end
+
   def get_balance(broker)
     uri = URI.parse(@base_url)
     path = "/accounts/balance"

@@ -3,8 +3,8 @@ require_relative "exchanges/liquid"
 
 
 class Broker
-  def get_ticker(broker)
-    Object.const_get(broker[:broker]).new.get_ticker(broker)
+  def get_order_book(broker)
+    Object.const_get(broker[:broker]).new.get_order_book(broker)
   end
   
   def get_balance(broker)
