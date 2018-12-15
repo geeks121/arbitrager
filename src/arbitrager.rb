@@ -46,6 +46,7 @@ class Arbitrager
       output_position(@config[:brokers])
       analysis_result = call_spread_analyzer(@config)
       call_deal_marker(@config, analysis_result)
+      output_board(@config[:target_amount], analysis_result)
     end
 
     def call_maker(broker)
@@ -72,11 +73,22 @@ class Arbitrager
     end
 
     def output_position(brokers)
-      output_info("--------------------POSITION--------------------")
+      output_info("---------------------POSITION---------------------")
       brokers.each do |broker|
         output_info("#{broker[:broker].ljust(10)} : #{broker[:position]} BTC") 
       end
       output_info("------------------------------------------------")
+    end
+
+    def output_board(target_amount, result)
+      output_info("--------------------ARBITRAGER--------------------")
+      output_info("Looking for opportunity...")
+      output_info("#{'Best bid'.ljust(18)} : #{result[:bid_broker].ljust(10)} Bid #{result[:best_bid]} #{result[:bid_amount]}")
+      output_info("#{'Best ask'.ljust(18)} : #{result[:ask_broker].ljust(10)} Ask #{result[:best_ask]} #{result[:ask_amount]}")
+      output_info("#{'Spread'.ljust(18)} : #{result[:spread]}")
+      output_info("#{'Available amount'.ljust(18)} : #{result[:available_amount]}")
+      output_info("#{'Target amount'.ljust(18)} : #{target_amount}")
+      output_info("#{'Expected profit'.ljust(18)} : #{result[:profit]} (#{result[:profit_rate]}%)")
     end
 end
 
