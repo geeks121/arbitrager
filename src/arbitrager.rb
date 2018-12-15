@@ -11,19 +11,20 @@ require_relative "deal_marker"
 class Arbitrager
   def initialize
     @format = "%Y-%m-%d %H:%M:%S"
+    @info = "INFO"
     @config = YAML.load_file("../config.yml")
   end
 
   def start
-    output("Starting the serivce...")
-    output("Starting Arbitrager...")
+    output_info("Starting the serivce...")
+    output_info("Starting Arbitrager...")
     call_arbitrager
   end
 
   def stop
-    output("Stopping Arbitrager...")
-    output("Stopping the service...")
-    output("Stopped the service.")
+    output_info("Stopping Arbitrager...")
+    output_info("Stopping the service...")
+    output_info("Stopped the service.")
     exit(0)
   end
 
@@ -42,6 +43,7 @@ class Arbitrager
       end
       
       threads.each(&:join)
+      output_position(@config[:brokers])
       analysis_result = call_spread_analyzer(@config)
       call_deal_marker(@config, analysis_result)
     end
@@ -65,8 +67,16 @@ class Arbitrager
     def call_record_holder
     end
   
-    def output(message)
-      puts "#{Time.now.strftime(@format)} #{message}"
+    def output_info(message)
+      puts "#{Time.now.strftime(@format)} #{@info} #{message}"
+    end
+
+    def output_position(brokers)
+      output_info("--------------------POSITION--------------------")
+      brokers.each do |broker|
+        output_info("#{broker[:broker].ljust(10)} : #{broker[:position]} BTC") 
+      end
+      output_info("------------------------------------------------")
     end
 end
 
