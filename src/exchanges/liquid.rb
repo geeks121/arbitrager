@@ -4,13 +4,10 @@ require "openssl"
 require "json"
 require "jwt"
 
-class Quoinex
+class Liquid
   def initialize
     @today = Time.now.strftime("%Y-%m-%d")
-    @name = "Quoinex"
-    @key = Settings.quoinex[:key]
-    @secret = Settings.quoinex[:secret]
-    @base_url = "https://api.quoine.com"
+    @base_url = "https://api.liquid.com"
   end
 
   def start
@@ -30,20 +27,21 @@ class Quoinex
     puts "End check order argument in #{data[0]}"
   end
 
-  def get_ticker
+  def get_ticker(broker)
     uri = URI.parse(@base_url)
     path = "/products/5"
-    signature = get_signature(path, @key, @secret)
+    signature = get_signature(broker[:broker], broker[:key], broker[:secret])
     response = request_for_get(uri, path, signature)
-    response["last_traded_price"].to_i.floor
+    return response["market_bid"].to_i, response["market_ask"].to_i
   end
 
-  def get_balance
+  def get_balance(broker)
     uri = URI.parse(@base_url)
     path = "/accounts/balance"
-    signature = get_signature(path, @key, @secret)
+    signature = get_signature(broker[:broker], broker[:key], broker[:secret])
     response = request_for_get(uri, path, signature)
-    extract_balance(response)
+    p response
+    #extract_balance(response)
   end
 
   def order_market(order_type: nil, amount: nil)

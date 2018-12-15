@@ -1,7 +1,8 @@
-require 'yaml'
+require "yaml"
 #require 'json'
 #require 'bundler/setup'
 require_relative "board_maker"
+require_relative "position_maker"
 #require_relative './lib/bitflyer'
 #require_relative './lib/coincheck'
 
@@ -20,6 +21,7 @@ class Arbitrager
   def stop
     output("Stopping Arbitrager...")
     output("Stopping the service...")
+    output("Stopped the service.")
     exit(0)
   end
 
@@ -31,7 +33,7 @@ class Arbitrager
 
     def call_arbitrager
       threads = []
-      @config["brokers"].each do |broker|
+      @config[:brokers].each do |broker|
         threads << Thread.new do
           call_maker(broker)
         end
@@ -41,7 +43,8 @@ class Arbitrager
     end
 
     def call_maker(broker)
-      BoardMaker.new.call_broker(broker)
+      broker.merge!(BoardMaker.new.call_broker(broker))
+      #PositionMaker.new.call_broker(broker)
     end
 
     def call_broker

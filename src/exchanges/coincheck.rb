@@ -6,9 +6,6 @@ require "json"
 class Coincheck
   def initialize
     @today = Time.now.strftime("%Y-%m-%d")
-    @name = "Coincheck"
-    @key = Settings.coincheck[:key]
-    @secret = Settings.coincheck[:secret]
     @base_url = "https://coincheck.com"
   end
 
@@ -36,18 +33,19 @@ class Coincheck
     puts "End check order argument in #{data[0]}"
   end
 
-  def get_ticker
+  def get_ticker(broker)
     uri = URI.parse(@base_url + "/api/ticker")
-    headers = get_signature(uri, @key, @secret)
+    headers = get_signature(broker[:broker], broker[:key], broker[:secret])
     response = request_for_get(uri, headers)
-    response["last"].to_i.floor
+    return response["bid"].to_i, response["ask"].to_i
   end
 
-  def get_balance
+  def get_balance(broker)
     uri = URI.parse(@base_url + "/api/accounts/balance")
-    headers = get_signature(uri, @key, @secret)
+    headers = get_signature(broker[:broker], broker[:key], broker[:secret])
     response = request_for_get(uri, headers)
-    return response["jpy"].to_i.floor, response["btc"].to_f.truncate(3)
+    p response
+    #return response["jpy"].to_i.floor, response["btc"].to_f.truncate(3)
   end
 
   def order_market(order_type: nil, market_buy_amount: nil, amount: nil)
