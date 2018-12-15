@@ -6,7 +6,6 @@ require "jwt"
 
 class Liquid
   def initialize
-    @today = Time.now.strftime("%Y-%m-%d")
     @base_url = "https://api.liquid.com"
   end
 
@@ -30,7 +29,7 @@ class Liquid
   def get_ticker(broker)
     uri = URI.parse(@base_url)
     path = "/products/5"
-    signature = get_signature(broker[:broker], broker[:key], broker[:secret])
+    signature = get_signature(path, broker[:key], broker[:secret])
     response = request_for_get(uri, path, signature)
     return response["market_bid"].to_i, response["market_ask"].to_i
   end
@@ -38,10 +37,9 @@ class Liquid
   def get_balance(broker)
     uri = URI.parse(@base_url)
     path = "/accounts/balance"
-    signature = get_signature(broker[:broker], broker[:key], broker[:secret])
+    signature = get_signature(path, broker[:key], broker[:secret])
     response = request_for_get(uri, path, signature)
-    p response
-    #extract_balance(response)
+    search_btc(response)
   end
 
   def order_market(order_type: nil, amount: nil)
@@ -55,7 +53,6 @@ class Liquid
     }.to_json
     signature = get_signature(path, @key, @secret)
     response = request_for_post(uri, path, signature, body)
-    p response
   end
 
   def get_signature(path, key, secret)
@@ -93,13 +90,9 @@ class Liquid
     JSON.parse(response.body)
   end
 
-  def extract_balance(response)
-    jpy_balance, btc_balance = nil
+  def search_btc(response)
     response.each do |hash|
-      jpy_balance = hash["balance"].to_i.floor if hash.has_value?("JPY")
-      btc_balance = hash["balance"].to_f.truncate(3) if hash.has_value?("BTC")
+      return hash["balance"].to_f.floor(3) if hash.has_value?("BTC")
     end
-  
-    return jpy_balance, btc_balance
   end
 end

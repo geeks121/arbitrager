@@ -8,8 +8,7 @@ class Broker
   end
   
   def get_balance(broker)
-    p broker
-    p Object.const_get(broker[:broker]).new.get_balance(broker)
+    Object.const_get(broker[:broker]).new.get_balance(broker)
   end
 
   def order_market(broker)

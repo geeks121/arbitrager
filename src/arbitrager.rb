@@ -44,7 +44,7 @@ class Arbitrager
 
     def call_maker(broker)
       broker.merge!(BoardMaker.new.call_broker(broker))
-      #PositionMaker.new.call_broker(broker)
+      broker.merge!(PositionMaker.new.call_broker(broker))
     end
 
     def call_broker
