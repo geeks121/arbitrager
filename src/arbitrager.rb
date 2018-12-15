@@ -42,7 +42,7 @@ class Arbitrager
       
       threads.each(&:join)
       p @config
-      call_spread_analyzer(@config)
+      p call_spread_analyzer(@config)
     end
 
     def call_maker(broker)
@@ -51,7 +51,7 @@ class Arbitrager
     end
 
     def call_spread_analyzer(config)
-      p SpreadAnalyzer.new.analyze(config)
+      SpreadAnalyzer.new.analyze(config)
     end
 
     def call_broker
