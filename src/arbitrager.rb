@@ -3,6 +3,7 @@ require "yaml"
 #require 'bundler/setup'
 require_relative "board_maker"
 require_relative "position_maker"
+require_relative "spread_analyzer"
 #require_relative './lib/bitflyer'
 #require_relative './lib/coincheck'
 
@@ -33,13 +34,15 @@ class Arbitrager
 
     def call_arbitrager
       threads = []
-      @config[:brokers].each do |broker|
+      @config[:brokers].map do |broker|
         threads << Thread.new do
           call_maker(broker)
         end
       end
-
+      
       threads.each(&:join)
+      p @config
+      call_spread_analyzer(@config)
     end
 
     def call_maker(broker)
@@ -47,13 +50,14 @@ class Arbitrager
       broker.merge!(PositionMaker.new.call_broker(broker))
     end
 
+    def call_spread_analyzer(config)
+      p SpreadAnalyzer.new.analyze(config)
+    end
+
     def call_broker
     end
 
     def call_record_holder
-    end
-
-    def call_spread_analyzer
     end
 
     def call_deal_marker
