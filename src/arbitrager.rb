@@ -4,6 +4,7 @@ require "yaml"
 require_relative "board_maker"
 require_relative "position_maker"
 require_relative "spread_analyzer"
+require_relative "deal_marker"
 #require_relative './lib/bitflyer'
 #require_relative './lib/coincheck'
 
@@ -41,8 +42,8 @@ class Arbitrager
       end
       
       threads.each(&:join)
-      p @config
-      p call_spread_analyzer(@config)
+      analysis_result = call_spread_analyzer(@config)
+      call_deal_marker(@config, analysis_result)
     end
 
     def call_maker(broker)
@@ -54,13 +55,14 @@ class Arbitrager
       SpreadAnalyzer.new.analyze(config)
     end
 
+    def call_deal_marker(config, analysis_result)
+      DealMarker.new.decide(config, analysis_result)
+    end
+
     def call_broker
     end
 
     def call_record_holder
-    end
-
-    def call_deal_marker
     end
   
     def output(message)
