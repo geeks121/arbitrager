@@ -4,7 +4,7 @@ require "yaml"
 require_relative "board_maker"
 require_relative "position_maker"
 require_relative "spread_analyzer"
-require_relative "deal_marker"
+require_relative "deal_maker"
 #require_relative './lib/bitflyer'
 #require_relative './lib/coincheck'
 
@@ -38,18 +38,18 @@ class Arbitrager
       threads = []
       @config[:brokers].map do |broker|
         threads << Thread.new do
-          call_maker(broker)
+          call_board_and_position_maker(broker)
         end
       end
       
       threads.each(&:join)
       output_position(@config[:brokers])
       analysis_result = call_spread_analyzer(@config)
-      call_deal_marker(@config, analysis_result)
-      output_board(@config[:target_amount], analysis_result)
+      deal_result = call_deal_maker(@config, analysis_result)
+      output_board(@config[:target_amount], analysis_result, deal_result)
     end
 
-    def call_maker(broker)
+    def call_board_and_position_maker(broker)
       broker.merge!(BoardMaker.new.call_broker(broker))
       broker.merge!(PositionMaker.new.call_broker(broker))
     end
@@ -58,8 +58,8 @@ class Arbitrager
       SpreadAnalyzer.new.analyze(config)
     end
 
-    def call_deal_marker(config, analysis_result)
-      DealMarker.new.decide(config, analysis_result)
+    def call_deal_maker(config, analysis_result)
+      DealMaker.new.decide(config, analysis_result)
     end
 
     def call_broker
@@ -77,18 +77,20 @@ class Arbitrager
       brokers.each do |broker|
         output_info("#{broker[:broker].ljust(10)} : #{broker[:position]} BTC") 
       end
-      output_info("------------------------------------------------")
+
+      output_info("--------------------------------------------------")
     end
 
-    def output_board(target_amount, result)
+    def output_board(target_amount, a_result, d_result)
       output_info("--------------------ARBITRAGER--------------------")
       output_info("Looking for opportunity...")
-      output_info("#{'Best bid'.ljust(18)} : #{result[:bid_broker].ljust(10)} Bid #{result[:best_bid]} #{result[:bid_amount]}")
-      output_info("#{'Best ask'.ljust(18)} : #{result[:ask_broker].ljust(10)} Ask #{result[:best_ask]} #{result[:ask_amount]}")
-      output_info("#{'Spread'.ljust(18)} : #{result[:spread]}")
-      output_info("#{'Available amount'.ljust(18)} : #{result[:available_amount]}")
+      output_info("#{'Best bid'.ljust(18)} : #{a_result[:bid_broker].ljust(10)} Bid #{a_result[:best_bid]} #{a_result[:bid_amount]}")
+      output_info("#{'Best ask'.ljust(18)} : #{a_result[:ask_broker].ljust(10)} Ask #{a_result[:best_ask]} #{a_result[:ask_amount]}")
+      output_info("#{'Spread'.ljust(18)} : #{a_result[:spread]}")
+      output_info("#{'Available amount'.ljust(18)} : #{a_result[:available_amount]}")
       output_info("#{'Target amount'.ljust(18)} : #{target_amount}")
-      output_info("#{'Expected profit'.ljust(18)} : #{result[:profit]} (#{result[:profit_rate]}%)")
+      output_info("#{'Expected profit'.ljust(18)} : #{a_result[:profit]} (#{a_result[:profit_rate]}%)")
+      output_info("#{d_result}")
     end
 end
 
