@@ -7,6 +7,7 @@ require "jwt"
 class Liquid
   def initialize
     @base_url = "https://api.liquid.com"
+    @BTC_JPY = 5
   end
 
   def start
@@ -50,17 +51,18 @@ class Liquid
     search_btc(response)
   end
 
-  def order_market(order_type: nil, amount: nil)
+  def order_market(broker, price: nil, amount: nil, order_type: nil)
     uri = URI.parse(@base_url)
     path = "/orders/"
     body = {
-      order_type: "market",
-      product_id: 5,
+      order_type: "limit",
+      product_id: @BTC_JPY,
       side: order_type,
+      price: price,
       quantity: amount,
     }.to_json
-    signature = get_signature(path, @key, @secret)
-    response = request_for_post(uri, path, signature, body)
+    signature = get_signature(path, broker[:key], broker[:secret])
+    request_for_post(uri, path, signature, body)
   end
 
   def get_signature(path, key, secret)

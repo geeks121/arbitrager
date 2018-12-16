@@ -6,6 +6,7 @@ require "json"
 class Coincheck
   def initialize
     @base_url = "https://coincheck.com"
+    @BTC_JPY = "btc_jpy"
   end
 
   def start
@@ -53,17 +54,17 @@ class Coincheck
     response["btc"].to_f.floor(3)
   end
 
-  def order_market(order_type: nil, market_buy_amount: nil, amount: nil)
+  def order_market(broker, price: nil, amount:nil, order_type: nil, market_buy_amount: nil)
     uri = URI.parse(@base_url + "/api/exchange/orders")
     body = {
+      rate: price,
       market_buy_amount: market_buy_amount,
       amount: amount,
       order_type: order_type,
-      pair: "btc_jpy"
+      pair: @BTC_JPY
     }.to_json
-    headers = get_signature(uri, @key, @secret, body)
-    response = request_for_post(uri, headers, body)
-    puts response
+    headers = get_signature(uri, broker[:key], broker[:secret], body)
+    request_for_post(uri, headers, body)
   end
 
   def get_signature(uri, key, secret, body = "")

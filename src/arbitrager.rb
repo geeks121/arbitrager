@@ -1,12 +1,8 @@
 require "yaml"
-#require 'json'
-#require 'bundler/setup'
 require_relative "board_maker"
 require_relative "position_maker"
 require_relative "spread_analyzer"
 require_relative "deal_maker"
-#require_relative './lib/bitflyer'
-#require_relative './lib/coincheck'
 
 class Arbitrager
   def initialize
@@ -50,7 +46,7 @@ class Arbitrager
       call_broker(@config, analysis_result) if deal_result[:reason] == "High profit"
     end
 
-    def call_board_and_position  _maker(broker)
+    def call_board_and_position_maker(broker)
       broker.merge!(BoardMaker.new.call_broker(broker))
       broker.merge!(PositionMaker.new.call_broker(broker))
     end
@@ -64,16 +60,16 @@ class Arbitrager
     end
 
     def call_broker(config, analysis_result)
-      p config
-      p analysis_result
       threads = []
       config[:brokers].each do |broker|
         threads << Thread.new do
           case broker[:broker]
           when analysis_result[:bid_broker]
-            Broker.new.order_market(broker, analysis_result[:best_bid], config[:target_amount])
+            Broker.new.order_market(broker, analysis_result[:best_ask],
+                                            config[:target_amount], "buy")
           when analysis_result[:ask_broker]
-            Broker.new.order_market(broker, analysis_result[:ask_bid], config[:target_amount])
+            Broker.new.order_market(broker, analysis_result[:best_bid],
+                                            config[:target_amount], "sell")
           end
         end
       end
