@@ -9,6 +9,7 @@ class DealMaker
     confirm_profit_rate(config[:profit_rate], analysis_result[:profit_rate])
     @reason ||= "High profit"
     @message ||= "Found arbitrage opportunity..."
+    return { reason: @reason, message: @message }
   end
 
   def confirm_amount(target, result)

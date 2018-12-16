@@ -46,10 +46,11 @@ class Arbitrager
       output_position(@config[:brokers])
       analysis_result = call_spread_analyzer(@config)
       deal_result = call_deal_maker(@config, analysis_result)
-      output_board(@config[:target_amount], analysis_result, deal_result)
+      output_board(@config[:target_amount], analysis_result, deal_result[:message])
+      call_broker(@config, analysis_result) if deal_result[:reason] == "High profit"
     end
 
-    def call_board_and_position_maker(broker)
+    def call_board_and_position  _maker(broker)
       broker.merge!(BoardMaker.new.call_broker(broker))
       broker.merge!(PositionMaker.new.call_broker(broker))
     end
@@ -62,12 +63,27 @@ class Arbitrager
       DealMaker.new.decide(config, analysis_result)
     end
 
-    def call_broker
+    def call_broker(config, analysis_result)
+      p config
+      p analysis_result
+      threads = []
+      config[:brokers].each do |broker|
+        threads << Thread.new do
+          case broker[:broker]
+          when analysis_result[:bid_broker]
+            Broker.new.order_market(broker, analysis_result[:best_bid], config[:target_amount])
+          when analysis_result[:ask_broker]
+            Broker.new.order_market(broker, analysis_result[:ask_bid], config[:target_amount])
+          end
+        end
+      end
+
+      threads.each(&:join)
     end
 
     def call_record_holder
     end
-  
+
     def output_info(message)
       puts "#{Time.now.strftime(@format)} #{@info} #{message}"
     end
