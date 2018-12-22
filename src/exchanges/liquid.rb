@@ -53,11 +53,10 @@ class Liquid
 
   def get_order_status(broker)
     uri = URI.parse(@base_url)
-    path = "/orders/657737508"
+    path = "/orders/#{broker['id']}"
     signature = get_signature(path, broker[:key], broker[:secret])
     response = request_for_get(uri, path, signature)
-    p "Liquid"
-    p response
+    { order_status: response.dig("id") }
   end
 
   def order_market(broker, price: nil, amount: nil, order_type: nil)

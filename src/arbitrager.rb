@@ -47,7 +47,8 @@ class Arbitrager
       analysis_result = call_spread_analyzer(@config)
       deal_result = call_deal_maker(@config, analysis_result)
       output_board(@config[:target_amount], analysis_result, deal_result[:message])
-      call_broker(@config, analysis_result) if deal_result[:reason] == "High profit"
+      #call_broker(@config, analysis_result) if deal_result[:reason] == "High profit"
+      call_broker(@config, analysis_result)
     end
 
     def call_board_and_position_maker(broker)
@@ -74,10 +75,10 @@ class Arbitrager
           case broker[:broker]
           when a_result[:bid_broker]
             #Broker.new.order_market(broker, a_result[:best_ask], config[:target_amount], "buy")
-            #p Broker.new.order_market(broker, 100, config[:target_amount], "buy")
+            broker.merge!(Broker.new.order_market(broker, 100, config[:target_amount], "buy"))
           when a_result[:ask_broker]
             #Broker.new.order_market(broker, a_result[:best_bid], config[:target_amount], "sell")
-            #p Broker.new.order_market(broker, 10000000, config[:target_amount], "sell")
+            broker.merge!(Broker.new.order_market(broker, 10000000, config[:target_amount], "sell"))
           end
         end
       end
@@ -89,9 +90,10 @@ class Arbitrager
 
     def check_order_status(config, a_result)
       threads = []
+      p config
       config[:brokers].each do |broker|
         threads << Thread.new do
-          Broker.new.get_order_status(broker)
+          broker.merge!(Broker.new.get_order_status(broker))
         end
       end
 
