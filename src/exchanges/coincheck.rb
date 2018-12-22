@@ -54,6 +54,14 @@ class Coincheck
     response["btc"].to_f.floor(3)
   end
 
+  def get_order_status(broker)
+    uri = URI.parse(@base_url + "/api/exchange/orders/opens")
+    headers = get_signature(uri, broker[:key], broker[:secret])
+    response = request_for_get(uri, headers)
+    p "Coincheck"
+    p response
+  end
+
   def order_market(broker, price: nil, amount:nil, order_type: nil, market_buy_amount: nil)
     uri = URI.parse(@base_url + "/api/exchange/orders")
     body = {

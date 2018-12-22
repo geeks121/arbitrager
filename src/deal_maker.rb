@@ -8,7 +8,7 @@ class DealMaker
     confirm_amount(config[:target_amount], analysis_result[:available_amount])
     confirm_profit_rate(config[:profit_rate], analysis_result[:profit_rate])
     @reason ||= "High profit"
-    @message ||= "Found arbitrage opportunity..."
+    @message ||= ">> Found arbitrage opportunity..."
     return { reason: @reason, message: @message }
   end
 
@@ -22,7 +22,7 @@ class DealMaker
   def confirm_profit_rate(target, result)
     if result <= 0 && target >= result
       @reason ||= "Low profit"
-      @message ||= "Target profit is smaller than expected profit"
+      @message ||= "Target profit is smaller than expected profit."
     end
   end
 end

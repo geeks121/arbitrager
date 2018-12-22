@@ -10,8 +10,12 @@ class Broker
     Object.const_get(broker[:broker]).new.get_balance(broker)
   end
 
+  def get_order_status(broker)
+    Object.const_get(broker[:broker]).new.get_order_status(broker)
+  end
+
   def order_market(broker, price, amount, order_type)
-    p Object.const_get(broker[:broker]).new.order_market(broker, price: price,
+    Object.const_get(broker[:broker]).new.order_market(broker, price: price,
                                                             amount: amount, order_type: order_type)
   end
 end

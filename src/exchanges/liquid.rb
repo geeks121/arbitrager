@@ -51,6 +51,15 @@ class Liquid
     search_btc(response)
   end
 
+  def get_order_status(broker)
+    uri = URI.parse(@base_url)
+    path = "/orders/657737508"
+    signature = get_signature(path, broker[:key], broker[:secret])
+    response = request_for_get(uri, path, signature)
+    p "Liquid"
+    p response
+  end
+
   def order_market(broker, price: nil, amount: nil, order_type: nil)
     uri = URI.parse(@base_url)
     path = "/orders/"
