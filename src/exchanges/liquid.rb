@@ -77,7 +77,7 @@ class Liquid
     uri = URI.parse(@base_url)
     path = "/orders/#{broker['id']}/cancel"
     signature = get_signature(path, broker[:key], broker[:secret])
-    response = request_for_get(uri, path, signature)
+    response = request_for_put(uri, path, signature)
     p response
   end
 
@@ -106,6 +106,14 @@ class Liquid
     request.add_field("X-Quoine-AUth", signature)
     request.add_field("Content-Type", "application/json")
     request.body = body
+    request_http(uri, request)
+  end
+
+  def request_for_put(uri, path, signature)
+    request = Net::HTTP::Put.new(path)
+    request.add_field("X-Quoine-API-Version", "2")
+    request.add_field("X-Quoine-AUth", signature)
+    request.add_field("Content-Type", "application/json")
     request_http(uri, request)
   end
 

@@ -75,9 +75,10 @@ class Coincheck
   end
 
   def cancel_order(broker)
-    uri = URI.parse(@base_url + "/api/exchange/orders/opens/#{broker['id']}")
+    uri = URI.parse(@base_url + "/api/exchange/orders/#{broker['id']}")
+    p uri
     headers = get_signature(uri, broker[:key], broker[:secret])
-    response = request_for_get(uri, headers)
+    response = request_for_delete(uri, headers)
     p response 
   end
 
@@ -100,6 +101,11 @@ class Coincheck
   def request_for_post(uri, headers = {}, body)
     request = Net::HTTP::Post.new(uri.request_uri, initheader = custom_header(headers))
     request.body = body
+    request_http(uri, request)
+  end
+
+  def request_for_delete(uri, headers = {})
+    request = Net::HTTP::Delete.new(uri.request_uri, initheader = custom_header(headers))
     request_http(uri, request)
   end
 

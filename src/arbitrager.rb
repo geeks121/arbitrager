@@ -76,10 +76,10 @@ class Arbitrager
           case broker[:broker]
           when a_result[:bid_broker]
             #Broker.new.order_market(broker, a_result[:best_ask], config[:target_amount], "buy")
-            broker.merge!(Broker.new.order_market(broker, 100, config[:target_amount], "buy"))
+            #broker.merge!(Broker.new.order_market(broker, 100, config[:target_amount], "buy"))
           when a_result[:ask_broker]
             #Broker.new.order_market(broker, a_result[:best_bid], config[:target_amount], "sell")
-            #broker.merge!(Broker.new.order_market(broker, 10000000, config[:target_amount], "sell"))
+            broker.merge!(Broker.new.order_market(broker, 10000000, config[:target_amount], "sell"))
           end
         end
       end
@@ -134,6 +134,7 @@ class Arbitrager
         config[:brokers].each do |broker|
           if broker[:broker] == result
             sleep 1
+            p broker
             Broker.new.cancel_order(broker)
           end
         end
