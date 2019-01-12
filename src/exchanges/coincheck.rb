@@ -74,6 +74,13 @@ class Coincheck
     request_for_post(uri, headers, body)
   end
 
+  def cancel_order(broker)
+    uri = URI.parse(@base_url + "/api/exchange/orders/opens/#{broker['id']}")
+    headers = get_signature(uri, broker[:key], broker[:secret])
+    response = request_for_get(uri, headers)
+    p response 
+  end
+
   def get_signature(uri, key, secret, body = "")
     timestamp = Time.now.to_i.to_s
     message = timestamp + uri.to_s + body

@@ -10,7 +10,7 @@ class Arbitrager
     @format = "%Y-%m-%d %H:%M:%S"
     @info = "INFO"
     @config = YAML.load_file("../config.yml")
-    @retry_count = 1
+    @retry_count = 3
   end
 
   def start
@@ -76,7 +76,7 @@ class Arbitrager
           case broker[:broker]
           when a_result[:bid_broker]
             #Broker.new.order_market(broker, a_result[:best_ask], config[:target_amount], "buy")
-            #broker.merge!(Broker.new.order_market(broker, 100, config[:target_amount], "buy"))
+            broker.merge!(Broker.new.order_market(broker, 100, config[:target_amount], "buy"))
           when a_result[:ask_broker]
             #Broker.new.order_market(broker, a_result[:best_bid], config[:target_amount], "sell")
             #broker.merge!(Broker.new.order_market(broker, 10000000, config[:target_amount], "sell"))
@@ -85,14 +85,15 @@ class Arbitrager
       end
 
       threads.each(&:join)
-      sleep 1
       check_order_status(config, a_result)
     end
 
     def check_order_status(config, a_result)
+      result = nil
       1.upto(@retry_count) do |count|
         output_info(">> Order check attempt #{count}")
         output_info(">> Checking if both legs are done or not...")
+        sleep 1
         threads = []
         config[:brokers].each do |broker|
           threads << Thread.new do
@@ -101,21 +102,41 @@ class Arbitrager
         end
 
         threads.each(&:join)
+        pending = nil
         config[:brokers].each do |broker|
           case broker[:broker]
           when a_result[:bid_broker]
-            broker[:order_status].nil? ? output_info(">> Filled: #{a_result[:bid_broker]} Buy at #{a_result[:best_bid]}") :
-                                          output_info(">> Pending: #{a_result[:bid_broker]} Buy at #{a_result[:best_bid]}")
+            if broker[:order_status].nil?
+              output_info(">> Filled: #{a_result[:bid_broker]} Buy at #{a_result[:best_bid]}")
+            else
+              output_info(">> Pending: #{a_result[:bid_broker]} Buy at #{a_result[:best_bid]}")
+              pending = a_result[:bid_broker]
+            end
           when a_result[:ask_broker]
-            broker[:order_status].nil? ? output_info(">> Filled: #{a_result[:ask_broker]} Sell at #{a_result[:best_ask]}") :
-                                          output_info(">> Pending: #{a_result[:ask_broker]} Sell at #{a_result[:best_ask]}")
+            if broker[:order_status].nil?
+              output_info(">> Filled: #{a_result[:ask_broker]} Sell at #{a_result[:best_ask]}")
+            else
+              output_info(">> Pending: #{a_result[:ask_broker]} Sell at #{a_result[:best_ask]}")
+              pending = a_result[:ask_broker]
+            end
           end
         end
 
+        pending.nil? ? break : result = pending
+      end
+
+      if result.nil?
         output_info(">> Both legs are successfully filled.")
         output_info(">> Buy filled price is #{a_result[:best_bid]}")
         output_info(">> Sell filled price is #{a_result[:best_ask]}")
         output_info(">> Profit is #{a_result[:profit]}")
+      else
+        config[:brokers].each do |broker|
+          if broker[:broker] == result
+            sleep 1
+            Broker.new.cancel_order(broker)
+          end
+        end
       end
     end
 

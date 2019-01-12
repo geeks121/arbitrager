@@ -18,4 +18,8 @@ class Broker
     Object.const_get(broker[:broker]).new.order_market(broker, price: price,
                                                             amount: amount, order_type: order_type)
   end
+
+  def cancel_order(broker)
+    Object.const_get(broker[:broker]).new.cancel_order(broker)
+  end
 end

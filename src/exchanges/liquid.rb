@@ -73,6 +73,14 @@ class Liquid
     request_for_post(uri, path, signature, body)
   end
 
+  def cancel_order(broker)
+    uri = URI.parse(@base_url)
+    path = "/orders/#{broker['id']}/cancel"
+    signature = get_signature(path, broker[:key], broker[:secret])
+    response = request_for_get(uri, path, signature)
+    p response
+  end
+
   def get_signature(path, key, secret)
     timestamp = Time.now.to_i.to_s
     auth_payload = {
