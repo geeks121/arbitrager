@@ -59,6 +59,14 @@ class Liquid
     { order_status: response.dig("id") }
   end
 
+  def get_order_status(broker)
+    uri = URI.parse(@base_url)
+    path = "/orders/#{broker['id']}"
+    signature = get_signature(path, broker[:key], broker[:secret])
+    response = request_for_get(uri, path, signature)
+    { order_status: response.dig("id") }
+  end
+
   def order_market(broker, price: nil, amount: nil, order_type: nil)
     uri = URI.parse(@base_url)
     path = "/orders/"
@@ -78,7 +86,6 @@ class Liquid
     path = "/orders/#{broker['id']}/cancel"
     signature = get_signature(path, broker[:key], broker[:secret])
     response = request_for_put(uri, path, signature)
-    p response
   end
 
   def get_signature(path, key, secret)

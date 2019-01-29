@@ -79,7 +79,7 @@ class Arbitrager
             #broker.merge!(Broker.new.order_market(broker, 100, config[:target_amount], "buy"))
           when a_result[:ask_broker]
             #Broker.new.order_market(broker, a_result[:best_bid], config[:target_amount], "sell")
-            broker.merge!(Broker.new.order_market(broker, 10000000, config[:target_amount], "sell"))
+            #broker.merge!(Broker.new.order_market(broker, 10000000, config[:target_amount], "sell"))
           end
         end
       end
@@ -126,6 +126,7 @@ class Arbitrager
       end
 
       if result.nil?
+        
         output_info(">> Both legs are successfully filled.")
         output_info(">> Buy filled price is #{a_result[:best_bid]}")
         output_info(">> Sell filled price is #{a_result[:best_ask]}")
