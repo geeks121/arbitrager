@@ -62,10 +62,17 @@ class Coincheck
   end
 
   def get_order_history(broker)
-    uri = URI.parse(@base_url + "/api/exchange/orders/transactions")
+    uri = URI.parse(@base_url + "/api/exchange/orders/transactions_pagination")
     headers = get_signature(uri, broker[:key], broker[:secret])
     response = request_for_get(uri, headers)
-    p response
+    amount = response.dig("data", 0, "funds", "btc").to_f
+    if amount > 0
+      order_type = "buy"
+    else
+      order_type = "sell"
+    end
+
+    return {broker: broker[:broker], amount: amount.abs, order_type: order_type }
   end
 
   def order_market(broker, price: nil, amount:nil, order_type: nil, market_buy_amount: nil)

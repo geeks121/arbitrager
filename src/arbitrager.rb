@@ -7,6 +7,7 @@ require_relative "broker"
 
 class Arbitrager
   def initialize
+    @deal_record = []
     @format = "%Y-%m-%d %H:%M:%S"
     @info = "INFO"
     @config = YAML.load_file("../config.yml")
@@ -48,8 +49,7 @@ class Arbitrager
       analysis_result = call_spread_analyzer(@config)
       deal_result = call_deal_maker(@config, analysis_result)
       output_board(@config[:target_amount], analysis_result, deal_result[:message])
-      #call_broker(@config, analysis_result) if deal_result[:reason] == "High profit"
-      call_broker(@config, analysis_result)
+      call_broker(@config, analysis_result) if deal_result[:reason] == "High profit"
     end
 
     def call_board_and_position_maker(broker)
@@ -75,10 +75,10 @@ class Arbitrager
         threads << Thread.new do
           case broker[:broker]
           when a_result[:bid_broker]
-            #Broker.new.order_market(broker, a_result[:best_ask], config[:target_amount], "buy")
+            broker.merge!(Broker.new.order_market(broker, a_result[:best_ask], config[:target_amount], "buy"))
             #broker.merge!(Broker.new.order_market(broker, 100, config[:target_amount], "buy"))
           when a_result[:ask_broker]
-            #Broker.new.order_market(broker, a_result[:best_bid], config[:target_amount], "sell")
+            broker.merge!(Broker.new.order_market(broker, a_result[:best_bid], config[:target_amount], "sell"))
             #broker.merge!(Broker.new.order_market(broker, 10000000, config[:target_amount], "sell"))
           end
         end
@@ -89,7 +89,7 @@ class Arbitrager
     end
 
     def check_order_status(config, a_result)
-      result = nil
+      pending = nil
       1.upto(@retry_count) do |count|
         output_info(">> Order check attempt #{count}")
         output_info(">> Checking if both legs are done or not...")
@@ -102,7 +102,6 @@ class Arbitrager
         end
 
         threads.each(&:join)
-        pending = nil
         config[:brokers].each do |broker|
           case broker[:broker]
           when a_result[:bid_broker]
@@ -122,20 +121,29 @@ class Arbitrager
           end
         end
 
-        pending.nil? ? break : result = pending
+        break if pending.nil?
       end
 
-      if result.nil?
-        
+      if pending.nil?
+        sleep 1
+        history_result = []
+        threads = []
+        config[:brokers].each do |broker|
+          threads << Thread.new do
+            history_result.push(Broker.new.get_order_history(broker))
+          end
+        end
+
+        threads.each(&:join)
+        @deal_record[@deal_record.length] = history_result
         output_info(">> Both legs are successfully filled.")
         output_info(">> Buy filled price is #{a_result[:best_bid]}")
         output_info(">> Sell filled price is #{a_result[:best_ask]}")
         output_info(">> Profit is #{a_result[:profit]}")
       else
         config[:brokers].each do |broker|
-          if broker[:broker] == result
+          if broker[:broker] == pending
             sleep 1
-            p broker
             Broker.new.cancel_order(broker)
           end
         end
