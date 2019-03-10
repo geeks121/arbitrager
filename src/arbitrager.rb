@@ -19,7 +19,10 @@ class Arbitrager
     output_info("Starting Arbitrager...")
     output_info("Started Arbitrager.")
     output_info("Successfully started the service.")
-    call_arbitrager
+    loop do
+      sleep 3
+      call_arbitrager
+    end
   end
 
   def stop
@@ -49,7 +52,7 @@ class Arbitrager
       analysis_result = call_spread_analyzer(@config)
       deal_result = call_deal_maker(@config, analysis_result)
       output_board(@config[:target_amount], analysis_result, deal_result[:message])
-      call_broker(@config, analysis_result) if deal_result[:reason] == "High profit"
+      #call_broker(@config, analysis_result) if deal_result[:reason] == "High profit"
     end
 
     def call_board_and_position_maker(broker)

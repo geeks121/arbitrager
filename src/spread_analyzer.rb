@@ -6,7 +6,6 @@ class SpreadAnalyzer
     @best_ask = nil
     @bid_amount = nil
     @ask_amount = nil
-    @available_amount = nil
   end
 
   def analyze(config)
@@ -14,11 +13,12 @@ class SpreadAnalyzer
       analyze_price(broker)
     end
 
+    available_amount = analyze_amount(@bid_amount, @ask_amount)
     spread = analyze_spread
     profit, profit_rate = analyze_profit(spread, config[:target_amount])
     return { bid_broker: @bid_broker, best_bid: @best_bid, bid_amount: @bid_amount,
               ask_broker: @ask_broker, best_ask: @best_ask, ask_amount: @ask_amount,
-              available_amount: @available_amount, spread: spread, profit: profit, profit_rate: profit_rate }
+              available_amount: available_amount, spread: spread, profit: profit, profit_rate: profit_rate }
   end
 
   def analyze_price(broker)
@@ -28,25 +28,21 @@ class SpreadAnalyzer
     @ask_broker ||= broker[:broker]
     @best_ask ||= broker[:ask]
     @ask_amount ||= broker[:ask_amount]
-    @available_amount = @available_amount.nil? && broker[:bid_amount] < broker[:ask_amount] ?
-                                              broker[:bid_amount] : broker[:ask_amount]
     if @best_bid < broker[:bid]
       @bid_broker = broker[:broker]
       @best_bid = broker[:bid]
       @bid_amount = broker[:bid_amount]
-      analyze_amount(broker[:bid_amount])
     end
 
     if @best_ask > broker[:ask]
       @ask_broker = broker[:broker]
       @best_ask = broker[:ask]
       @ask_amount = broker[:ask_amount]
-      analyze_amount(broker[:ask_amount])
     end
   end
   
-  def analyze_amount(amount)
-    @available_amount = amount if @available_amount < amount
+  def analyze_amount(bid, ask)
+    bid > ask ? ask : bid
   end
 
   def analyze_spread
