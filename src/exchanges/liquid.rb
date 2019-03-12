@@ -59,6 +59,7 @@ class Liquid
     { order_status: response.dig("id") }
   end
 
+=begin
   def get_order_history(broker)
     uri = URI.parse(@base_url)
     path = "/orders/800753984"
@@ -66,6 +67,7 @@ class Liquid
     response = request_for_get(uri, path, signature)
     return { broker: broker[:broker], amount: response["quantity"], order_type: response["side"] }
   end
+=end
 
   def order_market(broker, price: nil, amount: nil, order_type: nil)
     uri = URI.parse(@base_url)

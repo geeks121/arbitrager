@@ -8,6 +8,7 @@ require_relative "broker"
 class Arbitrager
   def initialize
     @deal_record = []
+    @deal_record[0] = {:bid_broker=>"Coincheck", :ask_broker=>"Liquid", :amount=>0.06, :profit=>96, :profit_rate=>0.152}
     @format = "%Y-%m-%d %H:%M:%S"
     @info = "INFO"
     @config = YAML.load_file("../config.yml")
@@ -19,10 +20,10 @@ class Arbitrager
     output_info("Starting Arbitrager...")
     output_info("Started Arbitrager.")
     output_info("Successfully started the service.")
-    loop do
-      sleep 3
+    #loop do
+    #  sleep 3
       call_arbitrager
-    end
+    #end
   end
 
   def stop
@@ -48,6 +49,7 @@ class Arbitrager
       end
       
       threads.each(&:join)
+      output_record(@deal_record) if @deal_record.length > 0
       output_position(@config[:brokers])
       analysis_result = call_spread_analyzer(@config)
       deal_result = call_deal_maker(@config, analysis_result)
@@ -128,17 +130,19 @@ class Arbitrager
       end
 
       if pending.nil?
+=begin
         sleep 1
-        history_result = []
+        history_result = [{ profit: a_result[:profit], profit_rate: a_result[:profit_rate] }]
         threads = []
         config[:brokers].each do |broker|
           threads << Thread.new do
             history_result.push(Broker.new.get_order_history(broker))
           end
         end
-
         threads.each(&:join)
-        @deal_record[@deal_record.length] = history_result
+=end
+        @deal_record[@deal_record.length] = { bid_broker: a_result[:bid_broker], ask_broker: a_result[:ask_broker],
+                                               amount: config[:target_amount], profit: a_result[:profit], profit_rate: a_result[:profit_rate]}
         output_info(">> Both legs are successfully filled.")
         output_info(">> Buy filled price is #{a_result[:best_bid]}")
         output_info(">> Sell filled price is #{a_result[:best_ask]}")
@@ -179,6 +183,15 @@ class Arbitrager
       output_info("#{'Target amount'.ljust(18)} : #{target_amount}")
       output_info("#{'Expected profit'.ljust(18)} : #{a_result[:profit]} (#{a_result[:profit_rate]}%)")
       output_info("#{d_result}")
+    end
+
+    def output_record(d_record)
+      output_info("#{'RECORD'.center(50, '-')}")
+      d_record.each do |record|
+        output_info("Buy: #{record[:bid_broker]} Sell: #{record[:ask_broker]} Amount: #{record[:amount]} Profit: #{record[:profit]} (#{record[:profit_rate]}%)")
+      end
+
+      output_info("#{'-'.center(50, '-')}")
     end
 end
 

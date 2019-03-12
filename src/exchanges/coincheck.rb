@@ -61,6 +61,7 @@ class Coincheck
     { order_status: response.dig("orders", 0, "id") }
   end
 
+=begin
   def get_order_history(broker)
     uri = URI.parse(@base_url + "/api/exchange/orders/transactions_pagination")
     headers = get_signature(uri, broker[:key], broker[:secret])
@@ -74,6 +75,7 @@ class Coincheck
 
     return {broker: broker[:broker], amount: amount.abs, order_type: order_type }
   end
+=end
 
   def order_market(broker, price: nil, amount:nil, order_type: nil, market_buy_amount: nil)
     uri = URI.parse(@base_url + "/api/exchange/orders")
