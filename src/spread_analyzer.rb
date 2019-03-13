@@ -55,4 +55,9 @@ class SpreadAnalyzer
     profit_rate = (100 * profit / price).floor(3)
     return  profit, profit_rate
   end
+
+  def close_analyze_profit(bid, ask, amount)
+    spread = bid - ask
+    (spread * amount).floor
+  end
 end

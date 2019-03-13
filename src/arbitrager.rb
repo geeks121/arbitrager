@@ -49,7 +49,11 @@ class Arbitrager
       end
       
       threads.each(&:join)
-      output_record(@deal_record) if @deal_record.length > 0
+      if @deal_record.length > 0
+        output_record(@deal_record)
+        closing_deal_result = call_closing_spread_analyzer(@config, @deal_record)
+      end
+      
       output_position(@config[:brokers])
       analysis_result = call_spread_analyzer(@config)
       deal_result = call_deal_maker(@config, analysis_result)
@@ -64,6 +68,25 @@ class Arbitrager
 
     def call_spread_analyzer(config)
       SpreadAnalyzer.new.analyze(config)
+    end
+
+    def call_closing_spread_analyzer(config, deal_record)
+      bid, ask, closing_profit = nil
+      p config
+      p deal_record
+      deal_record.each do |record|
+        config[:brokers].each do |broker|
+          case broker[:broker]
+          when record[:bid_broker]
+            ask = broker[:ask]
+          when record[:ask_broker]
+            bid = broker[:bid]
+          end
+        end
+
+        profit = SpreadAnalyzer.new.close_analyze_profit(bid, ask, record[:amount])
+        DealMaker.new.confirm_closing_record(profit, record[:profit], config[:exit_profit_rate])
+      end
     end
 
     def call_deal_maker(config, analysis_result)
