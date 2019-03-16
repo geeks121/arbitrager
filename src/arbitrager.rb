@@ -20,10 +20,10 @@ class Arbitrager
     output_info("Starting Arbitrager...")
     output_info("Started Arbitrager.")
     output_info("Successfully started the service.")
-    #loop do
-    #  sleep 3
+    loop do
+      sleep 3
       call_arbitrager
-    #end
+    end
   end
 
   def stop
@@ -61,7 +61,7 @@ class Arbitrager
       if close_result[:reason] == "Closing"
         call_broker(@config, close_result)
       else
-        #call_broker(@config, analysis_result) if deal_result[:reason] == "High profit"
+        call_broker(@config, analysis_result) if deal_result[:reason] == "High profit"
       end
     end
 
@@ -114,10 +114,10 @@ class Arbitrager
         threads << Thread.new do
           case broker[:broker]
           when a_result[:bid_broker]
-            #broker.merge!(Broker.new.order_market(broker, a_result[:best_ask], config[:target_amount], "buy"))
+            broker.merge!(Broker.new.order_market(broker, a_result[:best_ask], config[:target_amount], "buy"))
             #broker.merge!(Broker.new.order_market(broker, 100, config[:target_amount], "buy"))
           when a_result[:ask_broker]
-            #broker.merge!(Broker.new.order_market(broker, a_result[:best_bid], config[:target_amount], "sell"))
+            broker.merge!(Broker.new.order_market(broker, a_result[:best_bid], config[:target_amount], "sell"))
             #broker.merge!(Broker.new.order_market(broker, 10000000, config[:target_amount], "sell"))
           end
         end
