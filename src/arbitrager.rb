@@ -51,14 +51,18 @@ class Arbitrager
       threads.each(&:join)
       if @deal_record.length > 0
         output_record(@deal_record)
-        closing_deal_result = call_closing_spread_analyzer(@config, @deal_record)
+        close_result = call_closing(@config, @deal_record)
       end
-      
+
       output_position(@config[:brokers])
       analysis_result = call_spread_analyzer(@config)
       deal_result = call_deal_maker(@config, analysis_result)
       output_board(@config[:target_amount], analysis_result, deal_result[:message])
-      #call_broker(@config, analysis_result) if deal_result[:reason] == "High profit"
+      if close_result[:reason] == "Closing"
+        call_broker(@config, close_result)
+      else
+        #call_broker(@config, analysis_result) if deal_result[:reason] == "High profit"
+      end
     end
 
     def call_board_and_position_maker(broker)
@@ -70,23 +74,30 @@ class Arbitrager
       SpreadAnalyzer.new.analyze(config)
     end
 
-    def call_closing_spread_analyzer(config, deal_record)
-      bid, ask, closing_profit = nil
-      p config
-      p deal_record
-      deal_record.each do |record|
+    def call_closing(config, deal_record)
+      bid_broker, bid, ask_broker, ask, profit, index, deal_result = nil
+      deal_record.each_with_index do |record, i|
         config[:brokers].each do |broker|
           case broker[:broker]
           when record[:bid_broker]
+            ask_broker = broker[:broker]
             ask = broker[:ask]
           when record[:ask_broker]
+            bid_broker = broker[:broker]
             bid = broker[:bid]
           end
         end
 
-        profit = SpreadAnalyzer.new.close_analyze_profit(bid, ask, record[:amount])
-        DealMaker.new.confirm_closing_record(profit, record[:profit], config[:exit_profit_rate])
+        if profit.nil? || profit < record[:profit]
+          profit = SpreadAnalyzer.new.close_analyze_profit(bid, ask, record[:amount])
+          deal_result = DealMaker.new.confirm_closing_record(profit, record[:profit], config[:exit_profit_rate])
+          index = i
+        end
       end
+
+
+      return { bid_broker: bid_broker, best_bid: bid, ask_broker: ask_broker, best_ask: ask,
+               index: index, profit: profit, reason: deal_result[:reason], message: deal_result[:message] }
     end
 
     def call_deal_maker(config, analysis_result)
@@ -103,10 +114,10 @@ class Arbitrager
         threads << Thread.new do
           case broker[:broker]
           when a_result[:bid_broker]
-            broker.merge!(Broker.new.order_market(broker, a_result[:best_ask], config[:target_amount], "buy"))
+            #broker.merge!(Broker.new.order_market(broker, a_result[:best_ask], config[:target_amount], "buy"))
             #broker.merge!(Broker.new.order_market(broker, 100, config[:target_amount], "buy"))
           when a_result[:ask_broker]
-            broker.merge!(Broker.new.order_market(broker, a_result[:best_bid], config[:target_amount], "sell"))
+            #broker.merge!(Broker.new.order_market(broker, a_result[:best_bid], config[:target_amount], "sell"))
             #broker.merge!(Broker.new.order_market(broker, 10000000, config[:target_amount], "sell"))
           end
         end
@@ -153,19 +164,13 @@ class Arbitrager
       end
 
       if pending.nil?
-=begin
-        sleep 1
-        history_result = [{ profit: a_result[:profit], profit_rate: a_result[:profit_rate] }]
-        threads = []
-        config[:brokers].each do |broker|
-          threads << Thread.new do
-            history_result.push(Broker.new.get_order_history(broker))
-          end
+        if a_result[:reason] == "Closing"
+          @deal_record.delete_at(a_result[:index])
+        else
+          @deal_record[@deal_record.length] = { bid_broker: a_result[:bid_broker], ask_broker: a_result[:ask_broker],
+                                                amount: config[:target_amount], profit: a_result[:profit], profit_rate: a_result[:profit_rate]}
         end
-        threads.each(&:join)
-=end
-        @deal_record[@deal_record.length] = { bid_broker: a_result[:bid_broker], ask_broker: a_result[:ask_broker],
-                                               amount: config[:target_amount], profit: a_result[:profit], profit_rate: a_result[:profit_rate]}
+        
         output_info(">> Both legs are successfully filled.")
         output_info(">> Buy filled price is #{a_result[:best_bid]}")
         output_info(">> Sell filled price is #{a_result[:best_ask]}")

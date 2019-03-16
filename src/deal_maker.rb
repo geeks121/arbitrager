@@ -28,9 +28,11 @@ class DealMaker
 
   def confirm_closing_record(target, result, exit_profit_rate)
     closing_profit = (result * exit_profit_rate).floor - result
-    if target > closing_profit
+    if target >= closing_profit
       @reason ||= "Closing"
       @mesasge ||= "Close record for fixed profit."
     end
+
+    return { reason: @reason, message: @message }
   end
 end
