@@ -8,11 +8,10 @@ require_relative "broker"
 class Arbitrager
   def initialize
     @deal_record = []
-    @deal_record[0] = {:bid_broker=>"Coincheck", :ask_broker=>"Liquid", :amount=>0.06, :profit=>96, :profit_rate=>0.152}
     @format = "%Y-%m-%d %H:%M:%S"
     @info = "INFO"
     @config = YAML.load_file("../config.yml")
-    @retry_count = 3
+    @retry_count = 10
   end
 
   def start
@@ -21,7 +20,7 @@ class Arbitrager
     output_info("Started Arbitrager.")
     output_info("Successfully started the service.")
     loop do
-      sleep 3
+      sleep 2
       call_arbitrager
     end
   end
@@ -41,6 +40,7 @@ class Arbitrager
   private
 
     def call_arbitrager
+      close_result = {}
       threads = []
       @config[:brokers].map do |broker|
         threads << Thread.new do
@@ -51,17 +51,19 @@ class Arbitrager
       threads.each(&:join)
       if @deal_record.length > 0
         output_record(@deal_record)
-        close_result = call_closing(@config, @deal_record)
+        @close_result = call_closing(@config, @deal_record)
       end
 
       output_position(@config[:brokers])
       analysis_result = call_spread_analyzer(@config)
       deal_result = call_deal_maker(@config, analysis_result)
       output_board(@config[:target_amount], analysis_result, deal_result[:message])
-      if close_result[:reason] == "Closing"
-        call_broker(@config, close_result)
-      else
-        call_broker(@config, analysis_result) if deal_result[:reason] == "High profit"
+      if @deal_record.length <= 2
+        if close_result.has_key?(:reason)
+          call_broker(@config, close_result)
+        else
+          call_broker(@config, analysis_result) if deal_result[:reason] == "High profit"
+        end
       end
     end
 
@@ -164,7 +166,7 @@ class Arbitrager
       end
 
       if pending.nil?
-        if a_result[:reason] == "Closing"
+        if a_result.has_key?(:reason)
           @deal_record.delete_at(a_result[:index])
         else
           @deal_record[@deal_record.length] = { bid_broker: a_result[:bid_broker], ask_broker: a_result[:ask_broker],
@@ -182,6 +184,8 @@ class Arbitrager
             Broker.new.cancel_order(broker)
           end
         end
+
+        output_info(">> Cancelled order.")
       end
     end
 

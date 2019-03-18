@@ -20,7 +20,7 @@ class DealMaker
   end
   
   def confirm_profit_rate(target, result)
-    if result <= 0 && target >= result
+    if result <= 0 || target >= result
       @reason ||= "Low profit"
       @message ||= "Target profit is smaller than expected profit."
     end
