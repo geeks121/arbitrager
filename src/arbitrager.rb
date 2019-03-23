@@ -1,4 +1,5 @@
 require "yaml"
+require "logger"
 require_relative "board_maker"
 require_relative "position_maker"
 require_relative "spread_analyzer"
@@ -10,6 +11,8 @@ class Arbitrager
     @deal_record = []
     @format = "%Y-%m-%d %H:%M:%S"
     @info = "INFO"
+    @log = Logger.new("./#{Time.now.strftime("%Y%m%d")}_arbitrager.log")
+    @log_std = Logger.new(STDOUT)
     @config = YAML.load_file("../config.yml")
     @retry_count = 10
   end
@@ -20,7 +23,7 @@ class Arbitrager
     output_info("Started Arbitrager.")
     output_info("Successfully started the service.")
     loop do
-      sleep 2
+      sleep 3
       call_arbitrager
     end
   end
@@ -51,7 +54,7 @@ class Arbitrager
       threads.each(&:join)
       if @deal_record.length > 0
         output_record(@deal_record)
-        @close_result = call_closing(@config, @deal_record)
+        close_result = call_closing(@config, @deal_record)
       end
 
       output_position(@config[:brokers])
@@ -59,10 +62,11 @@ class Arbitrager
       deal_result = call_deal_maker(@config, analysis_result)
       output_board(@config[:target_amount], analysis_result, deal_result[:message])
       if @deal_record.length <= 2
-        if close_result.has_key?(:reason)
-          call_broker(@config, close_result)
-        else
+        if close_result[:reason].nil?
           call_broker(@config, analysis_result) if deal_result[:reason] == "High profit"
+        else
+          output_info("Closing...")
+          call_broker(@config, close_result)
         end
       end
     end
@@ -78,25 +82,24 @@ class Arbitrager
 
     def call_closing(config, deal_record)
       bid_broker, bid, ask_broker, ask, profit, index, deal_result = nil
-      deal_record.each_with_index do |record, i|
-        config[:brokers].each do |broker|
-          case broker[:broker]
-          when record[:bid_broker]
-            ask_broker = broker[:broker]
-            ask = broker[:ask]
-          when record[:ask_broker]
-            bid_broker = broker[:broker]
-            bid = broker[:bid]
-          end
-        end
-
+      deal_record.each.with_index do |record, i|
         if profit.nil? || profit < record[:profit]
+          config[:brokers].each do |broker|
+            case broker[:broker]
+            when record[:bid_broker]
+              ask_broker = broker[:broker]
+              ask = broker[:ask]
+            when record[:ask_broker]
+              bid_broker = broker[:broker]
+              bid = broker[:bid]
+            end
+          end
+
           profit = SpreadAnalyzer.new.close_analyze_profit(bid, ask, record[:amount])
           deal_result = DealMaker.new.confirm_closing_record(profit, record[:profit], config[:exit_profit_rate])
           index = i
         end
       end
-
 
       return { bid_broker: bid_broker, best_bid: bid, ask_broker: ask_broker, best_ask: ask,
                index: index, profit: profit, reason: deal_result[:reason], message: deal_result[:message] }
@@ -116,10 +119,10 @@ class Arbitrager
         threads << Thread.new do
           case broker[:broker]
           when a_result[:bid_broker]
-            broker.merge!(Broker.new.order_market(broker, a_result[:best_ask], config[:target_amount], "buy"))
+            broker.merge!(Broker.new.order_market(broker, a_result[:best_bid], config[:target_amount], "buy"))
             #broker.merge!(Broker.new.order_market(broker, 100, config[:target_amount], "buy"))
           when a_result[:ask_broker]
-            broker.merge!(Broker.new.order_market(broker, a_result[:best_bid], config[:target_amount], "sell"))
+            broker.merge!(Broker.new.order_market(broker, a_result[:best_ask], config[:target_amount], "sell"))
             #broker.merge!(Broker.new.order_market(broker, 10000000, config[:target_amount], "sell"))
           end
         end
@@ -130,42 +133,50 @@ class Arbitrager
     end
 
     def check_order_status(config, a_result)
-      pending = nil
+      checking_result = nil
       1.upto(@retry_count) do |count|
+        order_status = []
+        bid_pending = nil
+        ask_pending = nil
         output_info(">> Order check attempt #{count}")
         output_info(">> Checking if both legs are done or not...")
-        sleep 1
+        sleep 2
         threads = []
         config[:brokers].each do |broker|
           threads << Thread.new do
-            broker.merge!(Broker.new.get_order_status(broker))
+            order_status.push(Broker.new.get_order_status(broker))
           end
         end
 
         threads.each(&:join)
-        config[:brokers].each do |broker|
+        order_status.each do |broker|
           case broker[:broker]
           when a_result[:bid_broker]
-            if broker[:order_status].nil?
+            if broker[:order_status].nil? || broker[:order_status] == "filled"
               output_info(">> Filled: #{a_result[:bid_broker]} Buy at #{a_result[:best_bid]}")
             else
               output_info(">> Pending: #{a_result[:bid_broker]} Buy at #{a_result[:best_bid]}")
-              pending = a_result[:bid_broker]
+              bid_pending = a_result[:bid_broker]
             end
           when a_result[:ask_broker]
-            if broker[:order_status].nil?
+            if broker[:order_status].nil? || broker[:order_status] == "filled"
               output_info(">> Filled: #{a_result[:ask_broker]} Sell at #{a_result[:best_ask]}")
             else
               output_info(">> Pending: #{a_result[:ask_broker]} Sell at #{a_result[:best_ask]}")
-              pending = a_result[:ask_broker]
+              ask_pending = a_result[:ask_broker]
             end
           end
         end
 
-        break if pending.nil?
+        if bid_pending.nil? && ask_pending.nil?
+          checking_result = "SUCCESS"
+          break
+        else
+          checking_result = {bid_broker: bid_pending, ask_broker: ask_pending }
+        end
       end
 
-      if pending.nil?
+      if checking_result ==  "SUCCESS"
         if a_result.has_key?(:reason)
           @deal_record.delete_at(a_result[:index])
         else
@@ -177,15 +188,20 @@ class Arbitrager
         output_info(">> Buy filled price is #{a_result[:best_bid]}")
         output_info(">> Sell filled price is #{a_result[:best_ask]}")
         output_info(">> Profit is #{a_result[:profit]}")
+        sleep 2
       else
+        sleep 1
         config[:brokers].each do |broker|
-          if broker[:broker] == pending
-            sleep 1
+          case broker[:broker]
+          when checking_result[:bid_broker]
+            Broker.new.cancel_order(broker)
+          when checking_result[:ask_broker]
             Broker.new.cancel_order(broker)
           end
         end
 
         output_info(">> Cancelled order.")
+        sleep 2
       end
     end
 
@@ -193,7 +209,9 @@ class Arbitrager
     end
 
     def output_info(message)
-      puts "#{Time.now.strftime(@format)} #{@info} #{message}"
+      #puts "#{Time.now.strftime(@format)} #{@info} #{message}"
+      @log.info(message)
+      @log_std.info(message)
     end
 
     def output_position(brokers)

@@ -56,7 +56,7 @@ class Liquid
     path = "/orders/#{broker['id']}"
     signature = get_signature(path, broker[:key], broker[:secret])
     response = request_for_get(uri, path, signature)
-    { order_status: response.dig("id") }
+    { broker: broker[:broker],  order_status: response.dig("status") }
   end
 
 =begin
