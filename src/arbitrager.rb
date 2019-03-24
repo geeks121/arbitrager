@@ -9,8 +9,6 @@ require_relative "broker"
 class Arbitrager
   def initialize
     @deal_record = []
-    @format = "%Y-%m-%d %H:%M:%S"
-    @info = "INFO"
     @log = Logger.new("./#{Time.now.strftime("%Y%m%d")}_arbitrager.log")
     @log_std = Logger.new(STDOUT)
     @config = YAML.load_file("../config.yml")
@@ -120,10 +118,8 @@ class Arbitrager
           case broker[:broker]
           when a_result[:bid_broker]
             broker.merge!(Broker.new.order_market(broker, a_result[:best_bid], config[:target_amount], "buy"))
-            #broker.merge!(Broker.new.order_market(broker, 100, config[:target_amount], "buy"))
           when a_result[:ask_broker]
             broker.merge!(Broker.new.order_market(broker, a_result[:best_ask], config[:target_amount], "sell"))
-            #broker.merge!(Broker.new.order_market(broker, 10000000, config[:target_amount], "sell"))
           end
         end
       end
@@ -177,13 +173,6 @@ class Arbitrager
       end
 
       if checking_result ==  "SUCCESS"
-        if a_result.has_key?(:reason)
-          @deal_record.delete_at(a_result[:index])
-        else
-          @deal_record[@deal_record.length] = { bid_broker: a_result[:bid_broker], ask_broker: a_result[:ask_broker],
-                                                amount: config[:target_amount], profit: a_result[:profit], profit_rate: a_result[:profit_rate]}
-        end
-        
         output_info(">> Both legs are successfully filled.")
         output_info(">> Buy filled price is #{a_result[:best_bid]}")
         output_info(">> Sell filled price is #{a_result[:best_ask]}")
@@ -196,7 +185,7 @@ class Arbitrager
           when checking_result[:bid_broker]
             Broker.new.cancel_order(broker)
             sleep 1
-            Broker.new.check_order_market(broker, a_result[:best_bid], config[:target_amount], "buy")
+            Broker.new.check_order_market(broker, a_result[:best_ask], config[:target_amount], "buy")
           when checking_result[:ask_broker]
             Broker.new.cancel_order(broker)
             sleep 1
@@ -204,16 +193,19 @@ class Arbitrager
           end
         end
 
-        output_info(">> Cancelled order.")
+        output_info(">> Cancelled order and filled market order.")
         sleep 2
+      end
+
+      if a_result.has_key?(:reason)
+        @deal_record.delete_at(a_result[:index])
+      else
+        @deal_record[@deal_record.length] = { bid_broker: a_result[:bid_broker], ask_broker: a_result[:ask_broker],
+                                              amount: config[:target_amount], profit: a_result[:profit], profit_rate: a_result[:profit_rate]}
       end
     end
 
-    def call_record_holder
-    end
-
     def output_info(message)
-      #puts "#{Time.now.strftime(@format)} #{@info} #{message}"
       @log.info(message)
       @log_std.info(message)
     end
