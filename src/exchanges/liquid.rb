@@ -18,13 +18,8 @@ class Liquid
     return @name, jpy_balance, btc_balance, btc_price
   end
 
-  def check_order_argument(data)
-    # data[0] is exchange name
-    # data[4] is order amount
-    # data[5] is order type
-    puts "Start check order argument in #{data[0]}"
-    order_market(order_type: data[5], amount: data[4]) if data[5]
-    puts "End check order argument in #{data[0]}"
+  def check_order_market(broker, price, amount, order_type)
+    order_market(broker, order: "market", amount: amount, order_type: order_type)
   end
 
   def get_ticker(broker)
@@ -69,11 +64,11 @@ class Liquid
   end
 =end
 
-  def order_market(broker, price: nil, amount: nil, order_type: nil)
+  def order_market(broker, order: "limit", price: nil, amount: nil, order_type: nil)
     uri = URI.parse(@base_url)
     path = "/orders/"
     body = {
-      order_type: "limit",
+      order_type: order,
       product_id: @BTC_JPY,
       side: order_type,
       price: price,

@@ -17,20 +17,12 @@ class Coincheck
     return @name, jpy_balance, btc_balance, btc_price
   end
 
-  def check_order_argument(data)
-    # data[0] is exchange name
-    # data[3] is bit price
-    # data[4] is order amount
-    # data[5] is order type
-    puts "Start check order argument in #{data[0]}"
-    return unless data[5] && data[4] > 0.005
-    if data[5] == "buy"
-      order_market(order_type: "market_buy", market_buy_amount: data[3] * data[4])
+  def check_order_market(broker, price, amount, order_type)
+    if order_type == "buy"
+      order_market(market_buy_amount: price * amount, order_type: "market_buy", )
     else
-      order_market(order_type: "market_sell", amount: data[4])
+      order_market(broker, amount: amount, order_type: "market_sell")
     end
-
-    puts "End check order argument in #{data[0]}"
   end
 
   def get_ticker(broker)

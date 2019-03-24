@@ -195,8 +195,12 @@ class Arbitrager
           case broker[:broker]
           when checking_result[:bid_broker]
             Broker.new.cancel_order(broker)
+            sleep 1
+            Broker.new.check_order_market(broker, a_result[:best_bid], config[:target_amount], "buy")
           when checking_result[:ask_broker]
             Broker.new.cancel_order(broker)
+            sleep 1
+            Broker.new.check_order_market(broker, a_result[:best_bid], config[:target_amount], "sell")
           end
         end
 
