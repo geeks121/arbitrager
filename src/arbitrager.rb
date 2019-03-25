@@ -59,7 +59,7 @@ class Arbitrager
       analysis_result = call_spread_analyzer(@config)
       deal_result = call_deal_maker(@config, analysis_result)
       output_board(@config[:target_amount], analysis_result, deal_result[:message])
-      if @deal_record.length <= 2
+      if @deal_record.length < 2
         if close_result[:reason].nil?
           call_broker(@config, analysis_result) if deal_result[:reason] == "High profit"
         else
@@ -109,7 +109,7 @@ class Arbitrager
 
     def call_broker(config, a_result)
       output_info(">> Sending order targetting price #{a_result[:bid_broker]} Bid #{a_result[:best_bid]}")
-      output_info(">> Sending order targetting price #{a_result[:ask_broker]} Bid #{a_result[:best_ask]}")    
+      output_info(">> Sending order targetting price #{a_result[:ask_broker]} Ask #{a_result[:best_ask]}")    
       # steps in Nonce must be incremented by coincheck.
       sleep 1
       threads = []
@@ -117,9 +117,9 @@ class Arbitrager
         threads << Thread.new do
           case broker[:broker]
           when a_result[:bid_broker]
-            broker.merge!(Broker.new.order_market(broker, a_result[:best_bid], config[:target_amount], "buy"))
+            broker.merge!(Broker.new.order_market(broker, a_result[:best_bid], config[:target_amount], "sell"))
           when a_result[:ask_broker]
-            broker.merge!(Broker.new.order_market(broker, a_result[:best_ask], config[:target_amount], "sell"))
+            broker.merge!(Broker.new.order_market(broker, a_result[:best_ask], config[:target_amount], "buy"))
           end
         end
       end
@@ -149,16 +149,16 @@ class Arbitrager
           case broker[:broker]
           when a_result[:bid_broker]
             if broker[:order_status].nil? || broker[:order_status] == "filled"
-              output_info(">> Filled: #{a_result[:bid_broker]} Buy at #{a_result[:best_bid]}")
+              output_info(">> Filled: #{a_result[:bid_broker]} sell at #{a_result[:best_bid]}")
             else
-              output_info(">> Pending: #{a_result[:bid_broker]} Buy at #{a_result[:best_bid]}")
+              output_info(">> Pending: #{a_result[:bid_broker]} sell at #{a_result[:best_bid]}")
               bid_pending = a_result[:bid_broker]
             end
           when a_result[:ask_broker]
             if broker[:order_status].nil? || broker[:order_status] == "filled"
-              output_info(">> Filled: #{a_result[:ask_broker]} Sell at #{a_result[:best_ask]}")
+              output_info(">> Filled: #{a_result[:ask_broker]} buy at #{a_result[:best_ask]}")
             else
-              output_info(">> Pending: #{a_result[:ask_broker]} Sell at #{a_result[:best_ask]}")
+              output_info(">> Pending: #{a_result[:ask_broker]} buy at #{a_result[:best_ask]}")
               ask_pending = a_result[:ask_broker]
             end
           end
@@ -174,22 +174,24 @@ class Arbitrager
 
       if checking_result ==  "SUCCESS"
         output_info(">> Both legs are successfully filled.")
-        output_info(">> Buy filled price is #{a_result[:best_bid]}")
-        output_info(">> Sell filled price is #{a_result[:best_ask]}")
+        output_info(">> Sell filled price is #{a_result[:best_bid]}")
+        output_info(">> Buy filled price is #{a_result[:best_ask]}")
         output_info(">> Profit is #{a_result[:profit]}")
         sleep 2
       else
         sleep 1
+        ## debug
+        p config
         config[:brokers].each do |broker|
           case broker[:broker]
           when checking_result[:bid_broker]
             Broker.new.cancel_order(broker)
             sleep 1
-            Broker.new.check_order_market(broker, a_result[:best_ask], config[:target_amount], "buy")
+            Broker.new.check_order_market(broker, a_result[:best_ask], config[:target_amount], "sell")
           when checking_result[:ask_broker]
             Broker.new.cancel_order(broker)
             sleep 1
-            Broker.new.check_order_market(broker, a_result[:best_bid], config[:target_amount], "sell")
+            Broker.new.check_order_market(broker, a_result[:best_bid], config[:target_amount], "buy")
           end
         end
 
@@ -234,7 +236,7 @@ class Arbitrager
     def output_record(d_record)
       output_info("#{'RECORD'.center(50, '-')}")
       d_record.each do |record|
-        output_info("Buy: #{record[:bid_broker]} Sell: #{record[:ask_broker]} Amount: #{record[:amount]} Profit: #{record[:profit]} (#{record[:profit_rate]}%)")
+        output_info("Sell: #{record[:bid_broker]} Buy: #{record[:ask_broker]} Amount: #{record[:amount]} Profit: #{record[:profit]} (#{record[:profit_rate]}%)")
       end
 
       output_info("#{'-'.center(50, '-')}")
