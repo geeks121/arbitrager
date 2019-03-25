@@ -59,13 +59,13 @@ class Arbitrager
       analysis_result = call_spread_analyzer(@config)
       deal_result = call_deal_maker(@config, analysis_result)
       output_board(@config[:target_amount], analysis_result, deal_result[:message])
-      if @deal_record.length < 2
-        if close_result[:reason].nil?
+      if close_result[:reason].nil?
+        if @deal_record.length < 2
           call_broker(@config, analysis_result) if deal_result[:reason] == "High profit"
-        else
-          output_info("Closing...")
-          call_broker(@config, close_result)
         end
+      else
+        output_info("Closing...")
+        call_broker(@config, close_result)
       end
     end
 
