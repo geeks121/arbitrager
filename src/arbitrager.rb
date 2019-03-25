@@ -168,7 +168,7 @@ class Arbitrager
           checking_result = "SUCCESS"
           break
         else
-          checking_result = {bid_broker: bid_pending, ask_broker: ask_pending }
+          checking_result = { bid_broker: bid_pending, ask_broker: ask_pending }
         end
       end
 
@@ -181,7 +181,10 @@ class Arbitrager
       else
         sleep 1
         ## debug
-        p config
+        @log.info(config)
+        @log_std.info(config)
+        @log.info(checking_result)
+        @log_std.info(checking_result)
         config[:brokers].each do |broker|
           case broker[:broker]
           when checking_result[:bid_broker]
