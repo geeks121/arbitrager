@@ -1,0 +1,11 @@
+---
+:target_amount: 1.0
+:profit_rate: 1.0
+:exit_profit_rate: 1.0
+:brokers:
+  - :broker: "[broker name]"
+    :key: "[key]"
+    :secret: "[secret]"
+  - :broker: "[broker name]"
+    :key: "[key]"
+    :secret: "[secret]"
